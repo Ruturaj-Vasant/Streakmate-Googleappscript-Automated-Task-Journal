@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <title>Task Analytics</title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        margin: 0;
+        background: #f7f9fb;
+        color: #222;
+      }
+      .container {
+        max-width: 800px;
+        margin: 40px auto;
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        padding: 32px 28px 24px 28px;
+      }
+      h2 {
+        text-align: center;
+        color: #2d6cdf;
+        margin-bottom: 32px;
+        letter-spacing: 1px;
+      }
+      #chart_div {
+        width: 100%;
+        min-height: 400px;
+        margin: 0 auto 32px auto;
+      }
+      .back-link {
+        display: block;
+        text-align: center;
+        margin-top: 18px;
+        color: #2d6cdf;
+        text-decoration: underline;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      .back-link:hover {
+        color: #1b4e9b;
+      }
+    </style>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <h2>📊 Task Analytics</h2>
+      <div id="chart_div">Loading chart...</div>
+      <a class="back-link" href="?page=index">← Back to Tasks</a>
+    </div>
+    <script>
+      // Placeholder: will fetch and render chart data from backend
+      google.charts.load('current', {'packages':['corechart']});
+      google.charts.setOnLoadCallback(drawChart);
+
+      function drawChart() {
+        google.script.run.withSuccessHandler(function(data) {
+          if (!data || !data.length) {
+            document.getElementById('chart_div').innerHTML = 'No analytics data available.';
+            return;
+          }
+          var dataTable = google.visualization.arrayToDataTable(data);
+          var options = {
+            title: 'Daily Task Completion Rate',
+            curveType: 'function',
+            legend: { position: 'bottom' },
+            height: 400,
+            colors: ['#2d6cdf'],
+            hAxis: { title: 'Date' },
+            vAxis: { title: 'Tasks Completed', minValue: 0 }
+          };
+          var chart = new google.visualization.LineChart(document.getElementById('chart_div'));
+          chart.draw(dataTable, options);
+        }).getAnalyticsData();
+      }
+    </script>
+  </body>
+</html>

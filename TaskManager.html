@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        margin: 0;
+        background: #f7f9fb;
+        color: #222;
+      }
+      .container {
+        max-width: 800px;
+        margin: 40px auto;
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        padding: 32px 28px 24px 28px;
+      }
+      h2 {
+        text-align: center;
+        color: #2d6cdf;
+        margin-bottom: 32px;
+        letter-spacing: 1px;
+      }
+      .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin-bottom: 24px;
+      }
+      table {
+        width: 100%;
+        min-width: 650px;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: #f4f8ff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(45,108,223,0.07);
+      }
+      th, td {
+        border: none;
+        padding: 12px 10px;
+        vertical-align: top;
+        font-size: 1em;
+        min-width: 90px;
+      }
+      th {
+        background: #e0e7ef;
+        color: #2d6cdf;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+      }
+      tr:nth-child(even) td {
+        background: #f7f9fb;
+      }
+      tr:hover td {
+        background: #eaf1fb;
+      }
+      select, input[type="text"], input[type="number"] {
+        width: 100%;
+        min-width: 60px;
+        max-width: 120px;
+        border: 1px solid #b5c6e0;
+        border-radius: 6px;
+        padding: 6px 8px;
+        font-size: 1em;
+        background: #fff;
+        transition: border 0.2s;
+        box-sizing: border-box;
+      }
+      select:focus, input[type="text"]:focus, input[type="number"]:focus {
+        border: 1.5px solid #2d6cdf;
+        outline: none;
+      }
+      .days-checkboxes {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 2px;
+      }
+      .days-checkboxes label {
+        display: flex;
+        align-items: center;
+        font-size: 0.98em;
+        background: #e0e7ef;
+        border-radius: 5px;
+        padding: 2px 8px;
+        margin-right: 2px;
+      }
+      .days-checkboxes input[type="checkbox"] {
+        accent-color: #2d6cdf;
+        margin-right: 4px;
+        transform: scale(1.1);
+      }
+      #statusMessage {
+        margin-top: 18px;
+        font-weight: bold;
+        color: #2ecc71;
+        text-align: center;
+        font-size: 1.1em;
+      }
+      .delete-btn {
+        color: #e74c3c;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 1.2em;
+        border: none;
+        background: none;
+        transition: color 0.2s;
+      }
+      .delete-btn:hover {
+        color: #c0392b;
+        text-shadow: 0 2px 8px #e74c3c33;
+      }
+      button[type="button"], button[type="submit"] {
+        background: linear-gradient(90deg, #2d6cdf 60%, #4e9cff 100%);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 28px;
+        font-size: 1.05em;
+        font-weight: 600;
+        margin-right: 10px;
+        margin-top: 8px;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(45,108,223,0.10);
+        transition: background 0.2s, box-shadow 0.2s;
+        display: inline-block;
+      }
+      button[type="button"]:hover, button[type="submit"]:hover {
+        background: linear-gradient(90deg, #1b4e9b 60%, #2d6cdf 100%);
+        box-shadow: 0 4px 16px rgba(45,108,223,0.18);
+      }
+      @media (max-width: 700px) {
+        .container {
+          padding: 10px 2vw 10px 2vw;
+        }
+        h2 {
+          font-size: 1.2em;
+        }
+        .table-responsive {
+          margin-bottom: 16px;
+        }
+        table, th, td {
+          font-size: 0.95em;
+          min-width: 80px;
+        }
+        select, input[type="text"], input[type="number"] {
+          font-size: 0.97em;
+          min-width: 50px;
+          max-width: 100px;
+          padding: 5px 6px;
+        }
+        button[type="button"], button[type="submit"] {
+          font-size: 0.98em;
+          padding: 8px 16px;
+        }
+      }
+      .chip-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 4px;
+      }
+      .tag-chip {
+        background: #e0e7ef;
+        color: #2d6cdf;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 0.95em;
+        display: inline-block;
+        margin-bottom: 2px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>📅 Task Manager – <span id="monthLabel"></span></h2>
+      <form id="taskForm">
+        <div class="table-responsive">
+          <table id="taskTable">
+            <thead>
+              <tr>
+                <th>Reminder Interval (hrs)</th>
+                <th>Category</th>
+                <th>Task Name</th>
+                <th>Type</th>
+                <th>Goal</th>
+                <th>Time of Day</th>
+                <th>Days</th>
+                <th>Note</th>
+                <th>Delete</th>
+              </tr>
+            </thead>
+            <tbody id="taskBody"></tbody>
+          </table>
+        </div>
+        <button type="button" onclick="addTaskRow()">➕ Add Task</button>
+        <button type="submit">💾 Save All</button>
+      </form>
+      <div id="statusMessage"></div>
+    </div>
+
+    <script>
+      const dayOptions = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+      let deletedTaskIds = [];
+      let allTags = [];
+
+      function getAllTags() {
+        // Collect all unique tags from current tasks
+        const rows = document.querySelectorAll('#taskTable tbody tr');
+        const tagsSet = new Set();
+        rows.forEach(row => {
+          const catInput = row.querySelector('.tag-input');
+          if (catInput) {
+            catInput.value.split(',').forEach(tag => {
+              const t = tag.trim();
+              if (t) tagsSet.add(t);
+            });
+          }
+        });
+        return Array.from(tagsSet);
+      }
+
+      function renderTagsInput(input, tagList) {
+        // Remove previous chips
+        let chipContainer = input.parentNode.querySelector('.chip-container');
+        if (chipContainer) chipContainer.remove();
+        chipContainer = document.createElement('div');
+        chipContainer.className = 'chip-container';
+        chipContainer.style.display = 'flex';
+        chipContainer.style.flexWrap = 'wrap';
+        chipContainer.style.gap = '6px';
+        tagList.forEach(tag => {
+          const chip = document.createElement('span');
+          chip.className = 'tag-chip';
+          chip.textContent = tag;
+          chip.style.background = '#e0e7ef';
+          chip.style.color = '#2d6cdf';
+          chip.style.padding = '2px 10px';
+          chip.style.borderRadius = '12px';
+          chip.style.fontSize = '0.95em';
+          chip.style.display = 'inline-block';
+          chip.style.marginBottom = '2px';
+          chip.style.cursor = 'pointer';
+          chip.title = 'Remove tag';
+          chip.onclick = () => {
+            tagList.splice(tagList.indexOf(tag), 1);
+            input.value = tagList.join(', ');
+            renderTagsInput(input, tagList);
+          };
+          chipContainer.appendChild(chip);
+        });
+        input.parentNode.insertBefore(chipContainer, input.nextSibling);
+      }
+
+      function createTimeDropdown(value) {
+        const select = document.createElement('select');
+        for (let h = 5; h <= 23; h++) {
+          for (let m = 0; m < 60; m += 30) {
+            const time = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+            const option = document.createElement('option');
+            option.value = time;
+            option.text = time;
+            if (time === value) option.selected = true;
+            select.appendChild(option);
+          }
+        }
+        return select;
+      }
+
+      function createDaysCheckboxes(selectedDays = []) {
+        const container = document.createElement('div');
+        container.className = "days-checkboxes";
+
+        const allLabel = document.createElement('label');
+        const allCheckbox = document.createElement('input');
+        allCheckbox.type = "checkbox";
+        allCheckbox.value = "All";
+        allCheckbox.checked = selectedDays.includes("All");
+        allLabel.appendChild(allCheckbox);
+        allLabel.appendChild(document.createTextNode("All"));
+        container.appendChild(allLabel);
+
+        const dayCheckboxes = [];
+        dayOptions.forEach(day => {
+          const label = document.createElement('label');
+          const checkbox = document.createElement('input');
+          checkbox.type = "checkbox";
+          checkbox.value = day;
+          checkbox.checked = selectedDays.includes(day) || selectedDays.includes("All");
+          dayCheckboxes.push(checkbox);
+          label.appendChild(checkbox);
+          label.appendChild(document.createTextNode(day));
+          container.appendChild(label);
+        });
+
+        allCheckbox.addEventListener("change", () => {
+          dayCheckboxes.forEach(cb => cb.checked = allCheckbox.checked);
+        });
+
+        return container;
+      }
+
+      function getSelectedDays(container) {
+        const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+        const checked = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+        return checked.includes("All") || checked.length === 7 ? "All" : checked.filter(d => d !== "All").join(", ");
+      }
+
+      function addTaskRow(task = {}) {
+        try {
+          const row = document.createElement('tr');
+          row.dataset.taskId = task.id || "";
+
+          // Reminder Interval
+          const intervalCell = document.createElement('td');
+          const intervalInput = document.createElement('input');
+          intervalInput.type = 'number';
+          intervalInput.min = 1;
+          intervalInput.value = task.reminderInterval || 3;
+          intervalInput.setAttribute('aria-label', 'Reminder Interval (hrs)');
+          intervalCell.appendChild(intervalInput);
+          row.appendChild(intervalCell);
+
+          // Category (plain text input for tags)
+          const categoryCell = document.createElement('td');
+          const categoryInput = document.createElement('input');
+          categoryInput.type = 'text';
+          categoryInput.value = (task.category || '');
+          categoryInput.setAttribute('aria-label', 'Task Categories (comma separated)');
+          categoryInput.autocomplete = 'off';
+          categoryCell.appendChild(categoryInput);
+          row.appendChild(categoryCell);
+
+          // Task Name
+          const taskCell = document.createElement('td');
+          const taskInput = document.createElement('input');
+          taskInput.type = 'text';
+          taskInput.value = task.name || '';
+          taskInput.setAttribute('aria-label', 'Task Name');
+          taskCell.appendChild(taskInput);
+          row.appendChild(taskCell);
+
+          // Type
+          const typeCell = document.createElement('td');
+          const typeSelect = document.createElement('select');
+          typeSelect.setAttribute('aria-label', 'Task Type');
+          ["yes/no", "number"].forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt;
+            option.text = opt;
+            if ((task.type || "yes/no") === opt) option.selected = true;
+            typeSelect.appendChild(option);
+          });
+          typeCell.appendChild(typeSelect);
+          row.appendChild(typeCell);
+
+          // Goal
+          const goalCell = document.createElement('td');
+          const goalInput = document.createElement('input');
+          goalInput.type = 'number';
+          goalInput.value = task.goal || '';
+          goalInput.setAttribute('aria-label', 'Task Goal');
+          if ((task.type || "yes/no") !== 'number') goalInput.style.display = 'none';
+          typeSelect.addEventListener('change', () => {
+            goalInput.style.display = typeSelect.value === 'number' ? 'block' : 'none';
+          });
+          goalCell.appendChild(goalInput);
+          row.appendChild(goalCell);
+
+          // Time
+          const timeCell = document.createElement('td');
+          const timeSelect = createTimeDropdown(task.time || "07:00");
+          timeSelect.setAttribute('aria-label', 'Time of Day');
+          timeCell.appendChild(timeSelect);
+          row.appendChild(timeCell);
+
+          // Days
+          const daysCell = document.createElement('td');
+          const dayCheckboxes = createDaysCheckboxes((task.days || "").split(",").map(d => d.trim()));
+          daysCell.appendChild(dayCheckboxes);
+          row.appendChild(daysCell);
+
+          // Note
+          const noteCell = document.createElement('td');
+          const noteInput = document.createElement('input');
+          noteInput.type = 'text';
+          noteInput.value = task.note || '';
+          noteInput.setAttribute('aria-label', 'Task Note');
+          noteCell.appendChild(noteInput);
+          row.appendChild(noteCell);
+
+          // Delete Button
+          const deleteCell = document.createElement('td');
+          const delBtn = document.createElement('span');
+          delBtn.className = "delete-btn";
+          delBtn.textContent = "🗑";
+          delBtn.title = "Delete this task";
+          delBtn.setAttribute('tabindex', '0');
+          delBtn.setAttribute('role', 'button');
+          delBtn.setAttribute('aria-label', 'Delete Task');
+          delBtn.onclick = () => {
+            if (row.dataset.taskId) deletedTaskIds.push(row.dataset.taskId); // track for backend deletion
+            row.remove(); // remove from DOM
+          };
+          deleteCell.appendChild(delBtn);
+          row.appendChild(deleteCell);
+
+          document.getElementById('taskBody').appendChild(row);
+        } catch (err) {
+          console.error('Error in addTaskRow:', err);
+          alert('Error adding task row: ' + err.message);
+        }
+      }
+
+      function loadTasks() {
+        google.script.run.withSuccessHandler(data => {
+          const month = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+          document.getElementById('monthLabel').textContent = month;
+          document.getElementById('taskBody').innerHTML = ""; // Clear table
+          deletedTaskIds = []; // Reset deletions
+          if (data.length === 0) {
+            addTaskRow(); // Always show at least one row
+          } else {
+            data.forEach(t => addTaskRow(t));
+          }
+        }).getAllTasks();
+      }
+
+      document.getElementById('taskForm').addEventListener('submit', e => {
+        e.preventDefault();
+        const rows = document.querySelectorAll('#taskTable tbody tr');
+        const tasks = [];
+
+        rows.forEach(row => {
+          const [interval, category, taskName, type, goal, time, days, note, del] = row.children;
+          const task = {
+            id: row.dataset.taskId || "",
+            reminderInterval: interval.querySelector('input').value,
+            category: category.querySelector('input').value.trim(),
+            name: taskName.querySelector('input').value.trim(),
+            type: type.querySelector('select').value,
+            goal: type.querySelector('select').value === 'number'
+                    ? goal.querySelector('input').value
+                    : '',
+            time: time.querySelector('select').value,
+            days: getSelectedDays(days),
+            note: note.querySelector('input').value.trim()
+          };
+          if (task.name) tasks.push(task);
+        });
+
+        google.script.run.withSuccessHandler(msg => {
+          document.getElementById('statusMessage').textContent = msg || '✅ Tasks saved successfully!';
+          document.getElementById('statusMessage').style.opacity = 1;
+          setTimeout(() => {
+            document.getElementById('statusMessage').style.opacity = 0;
+            loadTasks();
+          }, 2500);
+        }).updateTasks(tasks, deletedTaskIds);
+      });
+
+      window.onload = loadTasks;
+    </script>
+  </body>
+</html>
