@@ -128,122 +128,10 @@ function parseTimeToFloat(timeStr) {
 }
 
 // === Fetch Active Tasks (Based on Time & Day) ===
-// function getTodayTasks(dateString) {
-//   const tz = Session.getScriptTimeZone();
-//   // Always get today in local timezone
-//   const todayDateString = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
-//   const dayOfWeek = Utilities.formatDate(new Date(), tz, 'EEE'); // e.g., 'Wed'
-//   Logger.log('Today is: ' + dayOfWeek + ', Date string: ' + todayDateString);
-
-//   const monthName = Utilities.formatDate(new Date(), tz, "MMMM-yyyy");
-//   const taskSheetName = `Tasks_${monthName}`;
-//   const progressSheetName = `${monthName}`;
-
-//   ensureTaskSheetExists(taskSheetName);
-//   const ss = SpreadsheetApp.getActiveSpreadsheet();
-//   const taskSheet = ss.getSheetByName(taskSheetName);
-//   const progressSheet = getMonthlySheet(todayDateString);
-
-//   const taskData = taskSheet.getDataRange().getValues();
-//   const progressData = progressSheet.getDataRange().getValues();
-//   const headers = progressData[0].map(h => typeof h === "string" ? h.trim() : h);
-
-//   const todayRow = progressData.find(row => {
-//     if (!row[0]) return false;
-//     const cellDate = typeof row[0] === 'string'
-//       ? row[0]
-//       : Utilities.formatDate(new Date(row[0]), tz, "yyyy-MM-dd");
-//     return cellDate === todayDateString;
-//   });
-//   const todayRowData = todayRow || [];
-
-//   // Column map from Tasks_<Month>
-//   const taskHeaders = taskData[0];
-//   const colMap = {};
-//   taskHeaders.forEach((h, i) => colMap[h.trim()] = i);
-//   const rows = taskData.slice(1);
-
-//   const allTasks = [];
-//   rows.forEach(row => {
-//     // Defensive: skip rows that are too short
-//     if (!row || row.length < Object.keys(colMap).length) return;
-//     const taskName = (row[colMap["Task Name"]] || "").toString().trim();
-//     const type = (row[colMap["Type"]] || "yes/no").toString().trim();
-//     const goal = row[colMap["Goal"]];
-//     let deadline = row[colMap["Time of Day"]];
-//     const dayStr = row[colMap["Days"]];
-
-//     if (!taskName) return;
-//     if (deadline instanceof Date) {
-//       deadline = Utilities.formatDate(deadline, tz, "HH:mm");
-//     }
-
-//     // --- Robust Days logic with logging ---
-//     let showToday = false;
-//     let daysArr = [];
-//     if (typeof dayStr === "string") {
-//       if (dayStr.trim().toLowerCase() === "all") {
-//         showToday = true;
-//         daysArr = ["All"];
-//       } else {
-//         daysArr = dayStr.split(',').map(d => {
-//           const trimmed = d.trim();
-//           return trimmed.charAt(0).toUpperCase() + trimmed.slice(1,3).toLowerCase();
-//         });
-//         if (daysArr.includes(dayOfWeek)) showToday = true;
-//       }
-//     }
-//     Logger.log(`Task: ${taskName}, Days raw: '${dayStr}', Days parsed: ${JSON.stringify(daysArr)}, Today: ${dayOfWeek}, Included: ${showToday}`);
-//     if (!showToday) return;
-//     // --- End robust Days logic ---
-
-//     const colIdx = headers.indexOf(taskName);
-//     const val = colIdx !== -1 ? todayRowData[colIdx] : "";
-//     const skipped = val === "Skipped";
-
-//     let progress = 0;
-//     if (!skipped && val !== "") {
-//       const stringVal = typeof val === "string" ? val.trim() : val.toString().trim();
-//       const match = stringVal.match(/^(\d+(\.\d+)?)\s*\(Goal:/);
-//       if (match) {
-//         progress = parseFloat(match[1]) || 0;
-//       } else if (!isNaN(stringVal)) {
-//         progress = parseFloat(stringVal) || 0;
-//       }
-//     }
-
-//     // Parse categories/tags as array
-//     let tags = [];
-//     if (row[colMap["Category"]]) {
-//       tags = row[colMap["Category"]].toString().split(',').map(t => t.trim()).filter(Boolean);
-//     }
-
-//     allTasks.push({
-//       taskName,
-//       type,
-//       goal,
-//       deadline,
-//       value: "",
-//       skipped,
-//       completedValue: skipped ? "Skipped" : val || "",
-//       progress,
-//       tags
-//     });
-//   });
-
-//   Logger.log("Today's tasks: " + JSON.stringify(allTasks));
-//   return {
-//     overdue: [],
-//     upcoming: [],
-//     allday: allTasks
-//   };
-// }
-
 function getTodayTasks(dateString) {
   const tz = Session.getScriptTimeZone();
   const todayDateString = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
   const dayOfWeek = Utilities.formatDate(new Date(), tz, 'EEE');
-  Logger.log('Today is: ' + dayOfWeek + ', Date string: ' + todayDateString);
 
   const monthName = Utilities.formatDate(new Date(), tz, "MMMM-yyyy");
   const taskSheetName = `Tasks_${monthName}`;
@@ -253,66 +141,82 @@ function getTodayTasks(dateString) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const taskSheet = ss.getSheetByName(taskSheetName);
   const taskData = taskSheet.getDataRange().getValues();
-
-  if (taskData.length < 2) return { overdue: [], upcoming: [], allday: [] };
-
   const taskHeaders = taskData[0];
   const colMap = {};
   taskHeaders.forEach((h, i) => colMap[h.trim()] = i);
   const rows = taskData.slice(1);
 
+  const progressSheet = getMonthlySheet(todayDateString);
+  const progressData = progressSheet.getDataRange().getValues();
+  const headers = progressData[0].map(h => typeof h === "string" ? h.trim() : h);
+
+  const todayRow = progressData.find(row => {
+    if (!row[0]) return false;
+    const cellDate = typeof row[0] === 'string'
+      ? row[0]
+      : Utilities.formatDate(new Date(row[0]), tz, "yyyy-MM-dd");
+    return cellDate === todayDateString;
+  });
+  const todayRowData = todayRow || [];
+
   function safeGet(row, colName) {
+    if (!row || !Array.isArray(row)) return "";
     const idx = colMap[colName];
-    if (idx === undefined) {
-      Logger.log(`safeGet: Column "${colName}" not found in colMap`);
-      return "";
-    }
-    if (!row || idx >= row.length) {
-      Logger.log(`safeGet: Row too short or missing for column "${colName}". Row: ${JSON.stringify(row)}, idx: ${idx}`);
-      return "";
-    }
-    return (row[idx] !== undefined && row[idx] !== null) ? row[idx].toString() : "";
+    if (idx === undefined || idx >= row.length) return "";
+    return (row[idx] !== undefined && row[idx] !== null) ? row[idx] : "";
   }
 
   const allTasks = [];
-  rows.forEach(row => {
-    if (!row || row.length < Object.keys(colMap).length) {
-      Logger.log(`Skipping incomplete row: ${JSON.stringify(row)}`);
-      return;
-    }
-    const taskName = safeGet(row, "Task Name").trim();
-    const type = safeGet(row, "Type").trim() || "yes/no";
-    const goal = safeGet(row, "Goal");
-    let deadline = safeGet(row, "Time of Day");
-    const dayStr = safeGet(row, "Days");
 
+  rows.forEach(row => {
+    if (!row || row.length === 0 || row.every(cell => cell === "")) return;
+
+    const taskName = String(safeGet(row, "Task Name")).trim();
     if (!taskName) return;
 
-    // Days logic
-    let showToday = false;
-    let daysArr = [];
-    if (typeof dayStr === "string") {
-      if (dayStr.trim().toLowerCase() === "all") {
-        showToday = true;
-        daysArr = ["All"];
-      } else {
-        daysArr = dayStr.split(',').map(d => {
-          const trimmed = d.trim();
-          return trimmed.charAt(0).toUpperCase() + trimmed.slice(1,3).toLowerCase();
-        });
-        if (daysArr.includes(dayOfWeek)) showToday = true;
-      }
+    const type = String(safeGet(row, "Type")).trim() || "yes/no";
+    const goal = safeGet(row, "Goal");
+
+    let deadline = safeGet(row, "Time of Day");
+    if (deadline instanceof Date) {
+      deadline = Utilities.formatDate(deadline, tz, "HH:mm");
+    } else {
+      deadline = String(deadline).trim();
     }
-    Logger.log(`Task: ${taskName}, Days raw: '${dayStr}', Days parsed: ${JSON.stringify(daysArr)}, Today: ${dayOfWeek}, Included: ${showToday}`);
+
+    const dayStr = String(safeGet(row, "Days"));
+
+    let showToday = false;
+    if (dayStr.trim().toLowerCase() === "all") {
+      showToday = true;
+    } else {
+      const daysArr = dayStr.split(',').map(d => d.trim().slice(0, 3));
+      if (daysArr.includes(dayOfWeek)) showToday = true;
+    }
     if (!showToday) return;
 
-    // You can add progress/skip logic here as needed
+    const colIdx = headers.indexOf(taskName);
+    const val = colIdx !== -1 ? todayRowData[colIdx] : "";
+    let skipped = val === "Skipped";
+    let completedValue = val || "";
+    let progress = 0;
 
-    // Parse categories/tags as array
+    if (!skipped && val !== "" && val !== undefined && val !== null) {
+      const stringVal = String(val).trim();
+      const match = stringVal.match(/^(\d+(\.\d+)?)\s*\(Goal:/);
+      if (match) {
+        progress = parseFloat(match[1]) || 0;
+      } else if (!isNaN(stringVal)) {
+        progress = parseFloat(stringVal) || 0;
+      } else if (type === "yes/no" && stringVal.toLowerCase() === "yes") {
+        progress = 1;
+      }
+    }
+
     let tags = [];
     const catVal = safeGet(row, "Category");
     if (catVal) {
-      tags = catVal.split(',').map(t => t.trim()).filter(Boolean);
+      tags = String(catVal).split(',').map(t => t.trim()).filter(Boolean);
     }
 
     allTasks.push({
@@ -321,14 +225,13 @@ function getTodayTasks(dateString) {
       goal,
       deadline,
       value: "",
-      skipped: false,
-      completedValue: "",
-      progress: 0,
+      skipped,
+      completedValue,
+      progress,
       tags
     });
   });
 
-  Logger.log("Today's tasks: " + JSON.stringify(allTasks));
   return {
     overdue: [],
     upcoming: [],
