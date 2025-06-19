@@ -1,6 +1,6 @@
 # StreakMate: Google Apps Script Automated Task Journal
 
-![View Count](https://komarev.com/ghpvc/?username=streakmate-googleappscript-automated-task-journal&color=blue)
+![View Count](https://komarev.com/ghpvc/?username=streakmate-task-tracker&color=blue)
 
 **StreakMate** is a lightweight, customizable task tracker built on top of Google Apps Script and Google Sheets.  
 It helps you **build habits**, **track daily tasks**, and **automate reminders** – all inside your Google Workspace.
