@@ -1,6 +1,8 @@
 # Habit Tracker Project
 
-![Hits](https://hits.dwyl.com/Ruturaj-Vasant/Streakmate-Googleappscript-Automated-Task-Journal.svg?style=flat-square)
+<p align="center">
+  <img src="https://komarev.com/ghpvc/?username=Ruturaj-Vasant&label=Page+Views&color=0e75b6&style=flat" alt="page views"/>
+</p>
 
 ## Overview
 The Habit Tracker project is a web application designed to help users manage their daily tasks, track workout routines, and log meals and calorie intake. The application is built using Google Apps Script and provides a user-friendly interface for tracking habits and fitness goals.
