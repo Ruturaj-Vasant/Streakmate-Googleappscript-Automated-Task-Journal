@@ -48,19 +48,24 @@ function ensureTaskSheetExists(taskSheetName) {
 }
 
 // === Setup Comments Sheet if Missing ===
-function ensureCommentSheetExists() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName(COMMENT_SHEET_NAME);
-  if (!sheet) {
-    sheet = ss.insertSheet(COMMENT_SHEET_NAME);
-    sheet.appendRow(["Date", "Comments"]);
-  }
-}
+// function ensureCommentSheetExists() {
+//   const ss = SpreadsheetApp.getActiveSpreadsheet();
+//   let sheet = ss.getSheetByName(COMMENT_SHEET_NAME);
+//   if (!sheet) {
+//     sheet = ss.insertSheet(COMMENT_SHEET_NAME);
+//     sheet.appendRow(["Date", "Comments"]);
+//   }
+// }
 
 // === Web Entry Point ===
 function doGet(e) {
-  const page = e.parameter.page || 'index';
-  return HtmlService.createHtmlOutputFromFile(page).setTitle("Daily Tracker");
+  const allowedPages = [
+    "index", "TodaysTask", "TaskManager", "workout_tracker_page",
+    "workout_logger_page", "routine_manager_page", "meal_tracker_page", "Analytics"
+  ];
+  const page = (e && e.parameter && e.parameter.page) || "index";
+  const safePage = allowedPages.includes(page) ? page : "index";
+  return HtmlService.createHtmlOutputFromFile(safePage).setTitle("Daily Tracker");
 }
 
 // === Monthly Sheet Handler ===
@@ -322,7 +327,9 @@ function submitProgress(data) {
 
 // === Send 3-Hourly Reminder Email ===
 function sendReminder() {
-  ensureTaskSheetExists();
+  const monthName = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "MMMM-yyyy");
+  const taskSheetName = `Tasks_${monthName}`;
+  ensureTaskSheetExists(taskSheetName);
 
   const today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd");
   const tasks = getTodayTasks(today);
@@ -575,7 +582,7 @@ function updateTasks(taskList, deletedIds) {
 function setup() {
   const monthName = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "MMMM-yyyy");
   ensureTaskSheetExists(`Tasks_${monthName}`);
-  ensureCommentSheetExists();
+  // ensureCommentSheetExists();
   createTrigger();
 }
 

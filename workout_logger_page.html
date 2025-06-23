@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workout Logger</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div id="loadingSpinner" class="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center hidden z-50">
+    <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+  </div>
+  <div class="max-w-3xl mx-auto mt-10 bg-white rounded-xl shadow-lg p-8">
+    <h2 class="text-center text-2xl font-bold text-blue-600 mb-8">Workout Logger</h2>
+    <div class="mb-6">
+      <label for="routineSelect" class="block text-sm font-medium text-gray-700">Select Routine</label>
+      <select id="routineSelect" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400">
+        <!-- Options will be populated dynamically -->
+      </select>
+    </div>
+    <div id="exerciseContainer" class="mb-6">
+      <!-- Assigned exercises will be displayed here -->
+    </div>
+    <button id="saveLogButton" class="mt-6 w-full bg-gradient-to-r from-blue-600 to-blue-400 text-white font-semibold py-3 rounded-lg shadow-md hover:from-blue-700 hover:to-blue-500 transition">
+      Save Log
+    </button>
+    <h3 class="text-lg font-semibold text-gray-800 mt-8">Workout History</h3>
+    <div id="historyContainer" class="mt-4">
+      <!-- Historical logs will be displayed here -->
+    </div>
+  </div>
+  <script>
+    function showLoading() {
+      document.getElementById('loadingSpinner').classList.remove('hidden');
+    }
+    function hideLoading() {
+      document.getElementById('loadingSpinner').classList.add('hidden');
+    }
+    // Load routines
+    function loadRoutines() {
+      showLoading();
+      google.script.run.withSuccessHandler(routines => {
+        renderRoutines(routines);
+        hideLoading();
+      }).getRoutinesForLogging();
+    }
+    function renderRoutines(routines) {
+      const select = document.getElementById('routineSelect');
+      select.innerHTML = '';
+      routines.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.name;
+        opt.textContent = r.name;
+        select.appendChild(opt);
+      });
+      select.removeEventListener('change', loadExercises);
+      select.addEventListener('change', loadExercises);
+      loadExercises();
+    }
+    // Load exercises for selected routine
+    function loadExercises() {
+      const routine = document.getElementById('routineSelect').value;
+      if (!routine) return;
+      showLoading();
+      google.script.run.withSuccessHandler(exercises => {
+        renderExercises(exercises);
+        hideLoading();
+      }).getExercisesForLogging(routine);
+      loadHistory();
+    }
+    function renderExercises(exercises) {
+      console.log('Received exercises:', exercises);
+      const container = document.getElementById('exerciseContainer');
+      if (!exercises || exercises.length === 0) {
+        container.innerHTML = '<div class="text-gray-500">No exercises found for this routine.</div>';
+        return;
+      }
+      container.innerHTML = '';
+      exercises.forEach(ex => {
+        const div = document.createElement('div');
+        div.className = 'mb-4 p-4 border border-gray-200 rounded-lg';
+        const safeId = ex.name.replace(/[^a-zA-Z0-9]/g, '_');
+        div.innerHTML = `
+          <h4 class="font-semibold mb-2">${ex.name}</h4>
+          <div id="sets_container_${safeId}">
+            ${(ex.prevSets && ex.prevSets.length ? ex.prevSets : [{}]).map((set, i) => `
+              <div class="grid grid-cols-4 gap-2 mb-2">
+                <div class="text-sm text-gray-600">Prev Wt: ${set.weight || '-'}</div>
+                <div class="text-sm text-gray-600">Prev Reps: ${set.reps || '-'}</div>
+                <input type="number" placeholder="Today's Reps" class="p-2 border rounded-md" />
+                <input type="number" placeholder="Today's Wt" class="p-2 border rounded-md" />
+              </div>`).join('')}
+          </div>
+          <button type="button" class="text-blue-600 text-sm underline" onclick="addSet('${safeId}', '${ex.name}')">+ Add Set</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+    function addSet(exId, exerciseName) {
+      const container = document.getElementById(`sets_container_${exId}`);
+      const existingRows = container.querySelectorAll('div.grid');
+      const rowCount = existingRows.length;
+
+      google.script.run
+        .withSuccessHandler(prevSet => {
+          const row = document.createElement('div');
+          row.className = 'grid grid-cols-4 gap-2 mb-2';
+          row.innerHTML = `
+            <div class="text-sm text-gray-600">Prev Wt: ${prevSet?.weight || '-'}</div>
+            <div class="text-sm text-gray-600">Prev Reps: ${prevSet?.reps || '-'}</div>
+            <input type="number" placeholder="Today's Reps" class="p-2 border rounded-md" />
+            <input type="number" placeholder="Today's Wt" class="p-2 border rounded-md" />
+          `;
+          container.appendChild(row);
+        })
+        .getNthPreviousSet(exerciseName, rowCount);
+    }
+    // Save workout log
+    document.getElementById('saveLogButton').addEventListener('click', function() {
+      const routine = document.getElementById('routineSelect').value;
+      const date = new Date().toISOString().slice(0, 10);
+      const exercises = [];
+      document.querySelectorAll('#exerciseContainer > div').forEach(div => {
+        const name = div.querySelector('h4').textContent;
+        const exId = name.replace(/[^a-zA-Z0-9]/g, '_');
+        const setRows = div.querySelectorAll(`#sets_container_${exId} > div`);
+        setRows.forEach(row => {
+          const inputs = row.querySelectorAll('input');
+          const reps = inputs[0]?.value || '';
+          const weight = inputs[1]?.value || '';
+          const prevWt = row.children[0]?.textContent.replace('Prev Wt: ', '') || '';
+          const prevReps = row.children[1]?.textContent.replace('Prev Reps: ', '') || '';
+          exercises.push({ exerciseName: name, reps, weight, prevWeight: prevWt, prevReps: prevReps });
+        });
+      });
+      const data = { routineName: routine, date, exercises };
+      google.script.run.withSuccessHandler(() => {
+        document.getElementById('exerciseContainer').innerHTML = '';
+        loadExercises();
+      }).logWorkoutSession(data);
+    });
+    // Load workout history
+    function loadHistory() {
+      const routine = document.getElementById('routineSelect').value;
+      if (!routine) return;
+      showLoading();
+      google.script.run.withSuccessHandler(logs => {
+        renderHistory(logs);
+        hideLoading();
+      }).getWorkoutHistoryForRoutine(routine);
+    }
+    function renderHistory(logs) {
+      const container = document.getElementById('historyContainer');
+      if (!logs || !logs.length) {
+        container.innerHTML = '<div class="text-gray-500">No history yet.</div>';
+        return;
+      }
+      let html = '<table class="min-w-full border border-gray-300 text-sm"><thead><tr class="bg-gray-100"><th class="border px-2 py-1">Date</th><th class="border px-2 py-1">Exercise</th><th class="border px-2 py-1">Prev Wt</th><th class="border px-2 py-1">Prev Reps</th><th class="border px-2 py-1">Reps</th><th class="border px-2 py-1">Weight</th></tr></thead><tbody>';
+      logs.forEach(row => {
+        html += `<tr><td class="border px-2 py-1">${row[0]}</td><td class="border px-2 py-1">${row[2]}</td><td class="border px-2 py-1">${row[3]}</td><td class="border px-2 py-1">${row[4]}</td><td class="border px-2 py-1">${row[5]}</td><td class="border px-2 py-1">${row[6]}</td></tr>`;
+      });
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+    // Initial load
+    loadRoutines();
+  </script>
+</body>
+</html>

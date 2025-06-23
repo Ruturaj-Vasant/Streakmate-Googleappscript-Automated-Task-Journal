@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Routine & Exercise Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div class="max-w-3xl mx-auto mt-10 bg-white rounded-xl shadow-lg p-8">
+    <h2 class="text-center text-2xl font-bold text-blue-600 mb-8">Routine & Exercise Manager</h2>
+    <!-- Exercise Bank -->
+    <div class="mb-8 p-4 bg-green-50 rounded-lg">
+      <h3 class="font-semibold text-green-700 mb-2">Exercise Bank</h3>
+      <div class="flex gap-2 flex-wrap mb-2">
+        <input type="text" id="exerciseName" class="flex-1 p-2 border border-gray-300 rounded-md" placeholder="Exercise name (e.g. Bench Press)" />
+        <input type="number" id="exerciseSets" class="w-20 p-2 border border-gray-300 rounded-md" placeholder="Sets" min="1" />
+        <input type="number" id="exerciseReps" class="w-20 p-2 border border-gray-300 rounded-md" placeholder="Reps" min="1" />
+        <input type="number" id="exerciseWeight" class="w-24 p-2 border border-gray-300 rounded-md" placeholder="Weight (kg)" min="0" />
+        <button id="addExerciseBankBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Add</button>
+      </div>
+      <div id="exerciseBankStatus" class="text-sm text-green-600 mb-2"></div>
+      <div>
+        <ul id="exerciseBankList" class="list-disc pl-5"></ul>
+      </div>
+    </div>
+    <!-- Routine Bank -->
+    <div class="mb-8 p-4 bg-blue-50 rounded-lg">
+      <h3 class="font-semibold text-blue-700 mb-2">Routine Bank</h3>
+      <div class="flex gap-2 flex-wrap mb-2">
+        <input type="text" id="routineName" class="flex-1 p-2 border border-gray-300 rounded-md" placeholder="Routine name (e.g. Push, Pull, Legs)" />
+        <button id="addRoutineBankBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Add</button>
+      </div>
+      <div id="routineBankStatus" class="text-sm text-blue-600 mb-2"></div>
+      <div>
+        <ul id="routineBankList" class="list-disc pl-5"></ul>
+      </div>
+    </div>
+    <!-- Assign Exercises to Routine -->
+    <div class="mb-8 p-4 bg-yellow-50 rounded-lg">
+      <h3 class="font-semibold text-yellow-700 mb-2">Assign Exercises to Routine</h3>
+      <div class="flex gap-2 flex-wrap mb-2">
+        <select id="assignRoutineSelect" class="p-2 border border-gray-300 rounded-md"></select>
+        <select id="assignExerciseSelect" class="p-2 border border-gray-300 rounded-md"></select>
+        <button id="assignExerciseBtn" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 transition">Assign</button>
+      </div>
+      <div id="assignStatus" class="text-sm text-yellow-700 mb-2"></div>
+      <div>
+        <ul id="routineExerciseList" class="list-disc pl-5"></ul>
+      </div>
+    </div>
+  </div>
+  <script>
+    // Load exercise bank
+    function loadExerciseBank() {
+      google.script.run.withSuccessHandler(renderExerciseBank).getExerciseBank();
+    }
+    function renderExerciseBank(exercises) {
+      const list = document.getElementById('exerciseBankList');
+      list.innerHTML = '';
+      exercises.forEach(ex => {
+        const li = document.createElement('li');
+        li.textContent = `${ex.name} (${ex.sets || '-'} sets, ${ex.reps || '-'} reps, ${ex.weight || '-'} kg)`;
+        list.appendChild(li);
+      });
+      // Also update assignExerciseSelect
+      const assignExerciseSelect = document.getElementById('assignExerciseSelect');
+      assignExerciseSelect.innerHTML = '';
+      exercises.forEach(ex => {
+        const opt = document.createElement('option');
+        opt.value = ex.name;
+        opt.textContent = ex.name;
+        assignExerciseSelect.appendChild(opt);
+      });
+    }
+    // Add exercise to bank
+    document.getElementById('addExerciseBankBtn').addEventListener('click', function() {
+      const name = document.getElementById('exerciseName').value.trim();
+      const sets = document.getElementById('exerciseSets').value;
+      const reps = document.getElementById('exerciseReps').value;
+      const weight = document.getElementById('exerciseWeight').value;
+      if (!name) return;
+      const exercise = { name, sets, reps, weight };
+      google.script.run.withSuccessHandler(msg => {
+        document.getElementById('exerciseBankStatus').textContent = msg;
+        document.getElementById('exerciseName').value = '';
+        document.getElementById('exerciseSets').value = '';
+        document.getElementById('exerciseReps').value = '';
+        document.getElementById('exerciseWeight').value = '';
+        loadExerciseBank();
+      }).addExerciseToBank(exercise);
+    });
+    // Load routine bank
+    function loadRoutineBank() {
+      google.script.run.withSuccessHandler(renderRoutineBank).getRoutineBank();
+    }
+    function renderRoutineBank(routines) {
+      const list = document.getElementById('routineBankList');
+      list.innerHTML = '';
+      routines.forEach(r => {
+        const li = document.createElement('li');
+        li.textContent = r.name;
+        list.appendChild(li);
+      });
+      // Also update assignRoutineSelect
+      const assignRoutineSelect = document.getElementById('assignRoutineSelect');
+      assignRoutineSelect.innerHTML = '';
+      routines.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.name;
+        opt.textContent = r.name;
+        assignRoutineSelect.appendChild(opt);
+      });
+      loadRoutineExerciseList();
+    }
+    // Add routine to bank
+    document.getElementById('addRoutineBankBtn').addEventListener('click', function() {
+      const name = document.getElementById('routineName').value.trim();
+      if (!name) return;
+      google.script.run.withSuccessHandler(msg => {
+        document.getElementById('routineBankStatus').textContent = msg;
+        document.getElementById('routineName').value = '';
+        loadRoutineBank();
+      }).addRoutineToBank(name);
+    });
+    // Assign exercise to routine
+    document.getElementById('assignExerciseBtn').addEventListener('click', function() {
+      const routine = document.getElementById('assignRoutineSelect').value;
+      const exercise = document.getElementById('assignExerciseSelect').value;
+      if (!routine || !exercise) return;
+      google.script.run.withSuccessHandler(msg => {
+        document.getElementById('assignStatus').textContent = msg;
+        loadRoutineExerciseList();
+      }).assignExerciseToRoutine(routine, exercise);
+    });
+    // Show exercises for selected routine
+    function loadRoutineExerciseList() {
+      const routine = document.getElementById('assignRoutineSelect').value;
+      if (!routine) {
+        document.getElementById('routineExerciseList').innerHTML = '';
+        return;
+      }
+      google.script.run.withSuccessHandler(renderRoutineExerciseList).getExercisesForRoutine(routine);
+    }
+    function renderRoutineExerciseList(exercises) {
+      const list = document.getElementById('routineExerciseList');
+      list.innerHTML = '';
+      exercises.forEach(ex => {
+        const li = document.createElement('li');
+        li.textContent = ex;
+        list.appendChild(li);
+      });
+    }
+    // Initial load
+    loadExerciseBank();
+    loadRoutineBank();
+    document.getElementById('assignRoutineSelect').addEventListener('change', loadRoutineExerciseList);
+  </script>
+</body>
+</html>

@@ -1,277 +1,39 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <base target="_top">
-    <style>
-      body {
-        font-family: 'Segoe UI', Arial, sans-serif;
-        margin: 0;
-        background: #f7f9fb;
-        color: #222;
-      }
-      .container {
-        max-width: 600px;
-        margin: 40px auto;
-        background: #fff;
-        border-radius: 16px;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-        padding: 32px 28px 24px 28px;
-      }
-      h2 {
-        text-align: center;
-        color: #2d6cdf;
-        margin-bottom: 32px;
-        letter-spacing: 1px;
-      }
-      .task-card {
-        border: none;
-        border-radius: 12px;
-        padding: 20px 18px 16px 18px;
-        margin-bottom: 18px;
-        box-shadow: 0 2px 10px rgba(45,108,223,0.07);
-        background: #f4f8ff;
-        transition: box-shadow 0.2s, background 0.2s;
-        position: relative;
-      }
-      .task-card:hover {
-        box-shadow: 0 4px 18px rgba(45,108,223,0.13);
-        background: #eaf1fb;
-      }
-      .task-card.completed {
-        background: #e0e7ef;
-        color: #aaa;
-        opacity: 0.7;
-        box-shadow: none;
-      }
-      .task-card.completed::after {
-        content: '✔';
-        color: #2ecc71;
-        font-size: 1.5em;
-        position: absolute;
-        top: 16px;
-        right: 18px;
-      }
-      progress {
-        height: 16px;
-        width: 100%;
-        border-radius: 8px;
-        background: #e0e7ef;
-        margin-bottom: 4px;
-      }
-      progress::-webkit-progress-bar {
-        background-color: #e0e7ef;
-        border-radius: 8px;
-      }
-      progress::-webkit-progress-value {
-        background-color: #2d6cdf;
-        border-radius: 8px;
-      }
-      progress::-moz-progress-bar {
-        background-color: #2d6cdf;
-        border-radius: 8px;
-      }
-      label {
-        font-size: 1em;
-        margin-right: 10px;
-      }
-      input[type="number"] {
-        border: 1px solid #b5c6e0;
-        border-radius: 6px;
-        padding: 4px 8px;
-        width: 80px;
-        font-size: 1em;
-        margin-left: 8px;
-        margin-bottom: 6px;
-        background: #fff;
-        transition: border 0.2s;
-      }
-      input[type="number"]:focus {
-        border: 1.5px solid #2d6cdf;
-        outline: none;
-      }
-      input[type="checkbox"] {
-        accent-color: #2d6cdf;
-        transform: scale(1.15);
-        margin-right: 6px;
-      }
-      #loading {
-        text-align: center;
-        font-weight: bold;
-        margin-bottom: 20px;
-        color: #2d6cdf;
-      }
-      #generalComment {
-        width: 100%;
-        border-radius: 8px;
-        border: 1px solid #b5c6e0;
-        padding: 10px;
-        font-size: 1em;
-        margin-top: 24px;
-        background: #f4f8ff;
-        transition: border 0.2s;
-      }
-      #generalComment:focus {
-        border: 1.5px solid #2d6cdf;
-        outline: none;
-      }
-      button {
-        background: linear-gradient(90deg, #2d6cdf 60%, #4e9cff 100%);
-        color: #fff;
-        border: none;
-        border-radius: 8px;
-        padding: 12px 32px;
-        font-size: 1.1em;
-        font-weight: 600;
-        margin-top: 18px;
-        cursor: pointer;
-        box-shadow: 0 2px 8px rgba(45,108,223,0.10);
-        transition: background 0.2s, box-shadow 0.2s;
-        display: block;
-        margin-left: auto;
-        margin-right: auto;
-      }
-      button:hover {
-        background: linear-gradient(90deg, #1b4e9b 60%, #2d6cdf 100%);
-        box-shadow: 0 4px 16px rgba(45,108,223,0.18);
-      }
-      .status {
-        color: #2ecc71;
-        font-weight: bold;
-        text-align: center;
-        margin-top: 16px;
-        font-size: 1.1em;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <h2>Today's Tasks</h2>
-      <div id="loading">Loading tasks...</div>
-      <div id="taskContainer"></div>
-
-      <textarea id="generalComment" placeholder="Optional comment..." rows="3"></textarea><br><br>
-      <button onclick="submitProgress()">Submit Progress</button>
-      <p id="status" class="status"></p>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Habit & Fitness Tracker Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+  <div class="max-w-2xl mx-auto mt-12 bg-white rounded-xl shadow-lg p-8">
+    <h1 class="text-3xl font-bold text-blue-700 mb-4 text-center">Welcome to Your Habit & Fitness Tracker</h1>
+    <p class="mb-6 text-gray-700 text-center">
+      Track your daily habits, workouts, and meals. Use the links below to access each module.
+    </p>
+    <div class="grid gap-6">
+      <a data-page-link="TodaysTask" class="block bg-blue-100 hover:bg-blue-200 rounded-lg p-4 text-blue-800 font-semibold text-center transition">Today's Tasks</a>
+      <a data-page-link="TaskManager" class="block bg-green-100 hover:bg-green-200 rounded-lg p-4 text-green-800 font-semibold text-center transition">Task Manager</a>
+      <a data-page-link="create_workout_page" class="block bg-purple-100 hover:bg-purple-200 rounded-lg p-4 text-purple-800 font-semibold text-center transition">Create Workout</a>
+       <a data-page-link="workout_logger_page" class="block bg-indigo-100 hover:bg-indigo-200 rounded-lg p-4 text-indigo-800 font-semibold text-center transition">Workout Logger</a>
+      <a data-page-link="meal_tracker_page" class="block bg-yellow-100 hover:bg-yellow-200 rounded-lg p-4 text-yellow-800 font-semibold text-center transition">Meal & Calorie Tracker</a>
+      <a data-page-link="Analytics" class="block bg-gray-100 hover:bg-gray-200 rounded-lg p-4 text-gray-800 font-semibold text-center transition">Analytics</a>
     </div>
+    <div class="mt-8 text-sm text-gray-500 text-center">
+      <p>Tip: Use the Task Manager to add or edit your daily habits. Log your progress in each module!</p>
+    </div>
+  </div>
 
-    <script>
-      let tasks = [];
-
-      function loadTasks() {
-        document.getElementById("loading").style.display = "block";
-        const today = new Date().toISOString().slice(0, 10);
-
-        google.script.run
-          .withSuccessHandler(renderTasks)
-          .withFailureHandler(err => {
-            document.getElementById("loading").textContent = "❌ Failed to load tasks: " + err.message;
-            console.error("Error in getTodayTasks:", err);
-          })
-          .getTodayTasks(today);
-      }
-
-      function renderTasks(response) {
-        document.getElementById("loading").style.display = "none";
-        if (!response || (!response.overdue && !response.upcoming && !response.allday)) {
-          document.getElementById("taskContainer").innerHTML = "<p>No tasks found.</p>";
-          return;
-        }
-
-        tasks = [...response.overdue, ...response.upcoming, ...response.allday];
-        const container = document.getElementById('taskContainer');
-        container.innerHTML = '';
-
-        if (tasks.length === 0) {
-          container.innerHTML = "<p>No tasks for today!</p>";
-          return;
-        }
-
-        tasks.forEach((task, idx) => {
-          if (!task.taskName) return;
-
-          const isNumberTask = (task.type === "number");
-          const goal = isNumberTask ? parseFloat(task.goal) || 1 : 1;
-          const progressValue = isNumberTask ? (isNaN(task.progress) ? 0 : task.progress) : task.progress;
-          let isCompleted = false;
-
-          if (isNumberTask) {
-            isCompleted = progressValue >= goal;
-          } else {
-            isCompleted = progressValue >= 1 || (typeof task.completedValue === 'string' && task.completedValue.toLowerCase() === 'yes');
-          }
-
-          const div = document.createElement('div');
-          div.className = 'task-card' + (isCompleted ? ' completed' : '');
-
-          // Render tags as chips
-          let tagsHtml = '';
-          if (Array.isArray(task.tags) && task.tags.length) {
-            tagsHtml = `<div style="margin-bottom:6px;">` +
-              task.tags.map(tag => `<span style="background:#e0e7ef;color:#2d6cdf;padding:2px 10px;border-radius:12px;font-size:0.95em;display:inline-block;margin-right:6px;margin-bottom:2px;">${tag}</span>`).join('') +
-              `</div>`;
-          }
-
-          div.innerHTML = `
-            ${tagsHtml}
-            <strong>${task.taskName}</strong> <br>
-            ${isNumberTask ? `Goal: ${goal} <br>` : ''}
-            Deadline: ${task.deadline || 'Anytime'} <br><br>
-          `;
-
-          if (isNumberTask) {
-            div.innerHTML += `
-              <div style="margin-bottom: 10px;">
-                <progress value="${progressValue}" max="${goal}"></progress>
-                <small>${progressValue} / ${goal}</small>
-              </div>
-              ${isCompleted ? '<span style="color:green;font-weight:bold;">Completed</span>' : `<label>Incremental Progress:</label>\n<input type="number" min="0" id="val_${idx}" ${isCompleted ? 'disabled' : ''} />`}
-            `;
-          } else {
-            div.innerHTML += `
-              <label><input type="checkbox" id="val_${idx}" ${progressValue >= 1 ? "checked" : ""} ${isCompleted ? 'disabled' : ''}> Completed today?</label>
-              ${isCompleted ? '<span style="color:green;font-weight:bold;"> Completed</span>' : ''}
-            `;
-          }
-
-          div.innerHTML += `
-            <br><label><input type="checkbox" id="skip_${idx}" ${isCompleted ? 'disabled' : ''}> Skipped</label>
-          `;
-
-          container.appendChild(div);
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      google.script.run.withSuccessHandler(baseUrl => {
+        document.querySelectorAll('[data-page-link]').forEach(link => {
+          const page = link.getAttribute('data-page-link');
+          link.setAttribute('href', `${baseUrl}?page=${page}`);
+          link.setAttribute('target', '_blank');
         });
-      }
-
-      function submitProgress() {
-        const today = new Date().toISOString().slice(0, 10);
-        const entries = tasks.map((task, idx) => {
-          const isNumberTask = (task.type === "number");
-          const rawValue = document.getElementById(`val_${idx}`);
-          const value = isNumberTask
-            ? rawValue.value
-            : rawValue.checked ? "yes" : "";
-
-          return {
-            taskName: task.taskName,
-            value: value,
-            goal: task.goal,
-            cannotDo: document.getElementById(`skip_${idx}`).checked
-          };
-        });
-
-        const payload = {
-          date: today,
-          entries: entries,
-          generalComment: document.getElementById("generalComment").value
-        };
-
-        document.getElementById("status").textContent = "Submitting...";
-        google.script.run.withSuccessHandler(msg => {
-          document.getElementById("status").textContent = msg;
-          loadTasks(); // Refresh UI
-        }).submitProgress(payload);
-      }
-
-      loadTasks();
-    </script>
-  </body>
+      }).getBaseUrl();
+    });
+  </script>
+</body>
 </html>

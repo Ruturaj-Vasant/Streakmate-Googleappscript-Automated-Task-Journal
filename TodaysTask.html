@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <base target="_top">
+  </head>
+  <body>
+    <div class="max-w-3xl mx-auto mt-10 bg-white rounded-xl shadow-lg p-8">
+      <h2 class="text-center text-2xl font-bold text-blue-600 mb-8">Today's Tasks</h2>
+      <div id="loading" class="text-center font-semibold text-blue-500 mb-4">Loading tasks...</div>
+      <div id="taskContainer"></div>
+
+      <textarea id="generalComment" placeholder="Optional comment..." rows="3"
+        class="w-full mt-6 p-3 rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-400 focus:outline-none text-gray-700 text-sm"></textarea>
+
+      <button onclick="submitProgress()"
+        class="mt-6 mx-auto block bg-gradient-to-r from-blue-600 to-blue-400 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:from-blue-700 hover:to-blue-500 transition">
+        Submit Progress
+      </button>
+      <p id="status" class="text-green-600 text-center mt-4 font-medium text-sm"></p>
+    </div>
+
+    <script>
+      let tasks = [];
+
+      function loadTasks() {
+        document.getElementById("loading").style.display = "block";
+        const today = new Date().toISOString().slice(0, 10);
+
+        google.script.run
+          .withSuccessHandler(renderTasks)
+          .withFailureHandler(err => {
+            document.getElementById("loading").textContent = "❌ Failed to load tasks: " + err.message;
+            console.error("Error in getTodayTasks:", err);
+          })
+          .getTodayTasks(today);
+      }
+
+      function renderTasks(response) {
+        document.getElementById("loading").style.display = "none";
+        if (!response || (!response.overdue && !response.upcoming && !response.allday)) {
+          document.getElementById("taskContainer").innerHTML = "<p>No tasks found.</p>";
+          return;
+        }
+
+        tasks = [...response.overdue, ...response.upcoming, ...response.allday];
+        const container = document.getElementById('taskContainer');
+        container.innerHTML = '';
+
+        if (tasks.length === 0) {
+          container.innerHTML = "<p>No tasks for today!</p>";
+          return;
+        }
+
+        // Group tasks by category (first tag)
+        const groupedTasks = {};
+        tasks.forEach((task) => {
+          const category = (Array.isArray(task.tags) && task.tags.length) ? task.tags[0] : "Other";
+          if (!groupedTasks[category]) groupedTasks[category] = [];
+          groupedTasks[category].push(task);
+        });
+
+        // Render each category group
+        Object.keys(groupedTasks).forEach((category) => {
+          const sectionWrapper = document.createElement("div");
+          sectionWrapper.className = "mb-7";
+
+          // Section Header
+          const sectionHeader = document.createElement("div");
+          sectionHeader.className = "flex items-center justify-between px-4 py-2 bg-blue-100 text-blue-800 rounded-md font-medium text-sm cursor-pointer hover:bg-blue-200 transition";
+          sectionHeader.innerHTML = `<span class="font-semibold">${category}</span><svg class="toggle-icon ml-2 w-5 h-5 text-blue-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>`;
+          sectionWrapper.appendChild(sectionHeader);
+
+          // Section Content
+          const sectionContent = document.createElement("div");
+          sectionContent.className = "transition-all duration-300 mt-3";
+          sectionContent.classList.add("section-content");
+          sectionWrapper.appendChild(sectionContent);
+
+          let expanded = true;
+          const icon = sectionHeader.querySelector('.toggle-icon');
+          sectionHeader.addEventListener("click", () => {
+            expanded = !expanded;
+            sectionContent.style.display = expanded ? "block" : "none";
+            if (expanded) {
+              icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path>';
+            } else {
+              icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M9 19l7-7-7-7"></path>';
+            }
+          });
+
+          groupedTasks[category].forEach((task, idx) => {
+            if (!task.taskName) return;
+
+            const isNumberTask = (task.type === "number");
+            const goal = isNumberTask ? parseFloat(task.goal) || 1 : 1;
+            const progressValue = isNumberTask ? (isNaN(task.progress) ? 0 : task.progress) : task.progress;
+            let isCompleted = false;
+
+            if (isNumberTask) {
+              isCompleted = progressValue >= goal;
+            } else {
+              isCompleted = progressValue >= 1 || (typeof task.completedValue === 'string' && task.completedValue.toLowerCase() === 'yes');
+            }
+
+            const div = document.createElement('div');
+            div.className = 'bg-white rounded-lg border border-gray-200 shadow-sm p-4 mb-4' + (isCompleted ? ' opacity-60' : '');
+
+            const header = document.createElement('div');
+            header.className = "text-base font-semibold text-gray-900 cursor-pointer";
+            header.textContent = `${task.taskName}`;
+            div.appendChild(header);
+
+            const content = document.createElement('div');
+            content.className = 'task-content flex flex-col gap-1 mt-1';
+            content.style.display = 'flex';
+
+            let subExpanded = true;
+            header.addEventListener('click', () => {
+              subExpanded = !subExpanded;
+              content.style.display = subExpanded ? 'flex' : 'none';
+            });
+
+            // Tags
+            if (Array.isArray(task.tags) && task.tags.length) {
+              const tagsDiv = document.createElement('div');
+              tagsDiv.className = "flex flex-wrap gap-1";
+              task.tags.forEach(tag => {
+                const tagSpan = document.createElement('span');
+                tagSpan.className = "bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm";
+                tagSpan.textContent = tag;
+                tagsDiv.appendChild(tagSpan);
+              });
+              content.appendChild(tagsDiv);
+            }
+
+            // Goal and Deadline
+            const metaDiv = document.createElement('div');
+            metaDiv.className = "flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500";
+            const goalP = document.createElement('p');
+            goalP.textContent = isNumberTask ? `Goal: ${goal}` : "";
+            const deadlineP = document.createElement('p');
+            deadlineP.textContent = `Deadline: ${task.deadline || 'Anytime'}`;
+            if (isNumberTask) metaDiv.appendChild(goalP);
+            metaDiv.appendChild(deadlineP);
+            content.appendChild(metaDiv);
+
+            if (isNumberTask) {
+              const inputWrapper = document.createElement('div');
+              inputWrapper.className = "flex items-center gap-2 flex-wrap mt-1";
+              if (!isCompleted) {
+                const label = document.createElement('label');
+                label.htmlFor = `val_${idx}`;
+                label.className = "text-sm font-medium text-gray-700";
+                label.textContent = "+ Progress:";
+                const input = document.createElement('input');
+                input.type = "number";
+                input.min = "0";
+                input.id = `val_${idx}`;
+                input.className = "w-20 rounded border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400";
+                inputWrapper.appendChild(label);
+                inputWrapper.appendChild(input);
+              } else {
+                const completedSpan = document.createElement('span');
+                completedSpan.className = "text-green-600 font-semibold text-sm";
+                completedSpan.textContent = "Completed";
+                inputWrapper.appendChild(completedSpan);
+              }
+              content.appendChild(inputWrapper);
+            } else {
+              const checkboxWrapper = document.createElement('div');
+              checkboxWrapper.className = "flex items-center gap-2 flex-wrap mt-1";
+              const checkbox = document.createElement('input');
+              checkbox.type = "checkbox";
+              checkbox.id = `val_${idx}`;
+              if (progressValue >= 1) checkbox.checked = true;
+              if (isCompleted) checkbox.disabled = true;
+              checkbox.className = "h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500";
+              const label = document.createElement('label');
+              label.htmlFor = `val_${idx}`;
+              label.className = "text-sm text-gray-700 select-none";
+              label.textContent = "Completed today?";
+              checkboxWrapper.appendChild(checkbox);
+              checkboxWrapper.appendChild(label);
+              if (isCompleted) {
+                const completedSpan = document.createElement('span');
+                completedSpan.className = "text-green-600 font-semibold text-sm";
+                completedSpan.textContent = "Completed";
+                checkboxWrapper.appendChild(completedSpan);
+              }
+              content.appendChild(checkboxWrapper);
+            }
+
+            const skipWrapper = document.createElement('div');
+            skipWrapper.className = "mt-1";
+            const skipLabel = document.createElement('label');
+            skipLabel.className = "inline-flex items-center gap-2 text-sm text-gray-700 cursor-pointer select-none";
+            const skipCheckbox = document.createElement('input');
+            skipCheckbox.type = "checkbox";
+            skipCheckbox.id = `skip_${idx}`;
+            if (isCompleted) skipCheckbox.disabled = true;
+            skipCheckbox.className = "h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500";
+            skipLabel.appendChild(skipCheckbox);
+            skipLabel.appendChild(document.createTextNode("Skipped"));
+            skipWrapper.appendChild(skipLabel);
+            content.appendChild(skipWrapper);
+
+            if (isNumberTask) {
+              const progDiv = document.createElement('div');
+              progDiv.className = "flex flex-col gap-1 mt-1";
+              const progressBar = document.createElement('progress');
+              progressBar.className = "w-full h-2 rounded-full bg-white border border-gray-300 overflow-hidden";
+              progressBar.style.backgroundColor = "white";
+              progressBar.value = progressValue;
+              progressBar.max = goal;
+              progDiv.appendChild(progressBar);
+
+              const progLabel = document.createElement('div');
+              progLabel.className = "text-sm text-gray-600";
+              progLabel.textContent = `${progressValue} / ${goal}`;
+              progDiv.appendChild(progLabel);
+
+              content.appendChild(progDiv);
+            }
+
+            const submitBtn = document.createElement('button');
+            submitBtn.textContent = 'Submit';
+            submitBtn.className = 'mt-1 w-full py-2 text-sm font-medium bg-blue-600 text-white rounded hover:bg-blue-700 transition';
+            submitBtn.onclick = () => submitSingleTask(idx);
+            content.appendChild(submitBtn);
+
+            div.appendChild(content);
+
+            sectionContent.appendChild(div);
+          });
+
+          container.appendChild(sectionWrapper);
+        });
+      }
+
+      function submitProgress() {
+        const today = new Date().toISOString().slice(0, 10);
+        const entries = tasks.map((task, idx) => {
+          const isNumberTask = (task.type === "number");
+          const rawValue = document.getElementById(`val_${idx}`);
+          const value = isNumberTask
+            ? rawValue.value
+            : rawValue.checked ? "yes" : "";
+
+          return {
+            taskName: task.taskName,
+            value: value,
+            goal: task.goal,
+            cannotDo: document.getElementById(`skip_${idx}`).checked
+          };
+        });
+
+        const payload = {
+          date: today,
+          entries: entries,
+          generalComment: document.getElementById("generalComment").value
+        };
+
+        document.getElementById("status").textContent = "Submitting...";
+        google.script.run.withSuccessHandler(msg => {
+          document.getElementById("status").textContent = msg;
+          loadTasks(); // Refresh UI
+        }).submitProgress(payload);
+      }
+
+      function submitSingleTask(idx) {
+        const today = new Date().toISOString().slice(0, 10);
+        const task = tasks[idx];
+        const isNumberTask = (task.type === "number");
+        const rawValue = document.getElementById(`val_${idx}`);
+        const value = isNumberTask ? rawValue.value : rawValue.checked ? "yes" : "";
+        const payload = {
+          date: today,
+          entries: [{
+            taskName: task.taskName,
+            value: value,
+            goal: task.goal,
+            cannotDo: document.getElementById(`skip_${idx}`).checked
+          }],
+          generalComment: ''
+        };
+        document.getElementById("status").textContent = `Submitting "${task.taskName}"...`;
+        google.script.run.withSuccessHandler(msg => {
+          document.getElementById("status").textContent = msg;
+          loadTasks(); // Refresh UI
+        }).submitProgress(payload);
+      }
+
+      loadTasks();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Routine Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+</head>
+<body>
+    <div class="max-w-3xl mx-auto mt-10 bg-white rounded-xl shadow-lg p-8">
+        <h2 class="text-center text-2xl font-bold text-blue-600 mb-2">Workout Routine Tracker</h2>
+        <h3 class="text-center text-lg font-medium text-blue-500 mb-8">Editing Routine</h3>
+
+        <!-- Unified New Routine Creation UI -->
+        <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+          <h3 class="font-semibold text-blue-700 mb-2 text-center text-xl">Create New Routine</h3>
+          <div class="space-y-4">
+            <input type="text" id="newRoutineName" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Routine name (e.g. Push, Pull, Legs)" />
+
+            <div class="relative">
+              <input type="text" id="newExerciseName" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Search exercise name..." autocomplete="off" />
+              <div id="exerciseSuggestions" class="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow mt-1 max-h-48 overflow-y-auto hidden"></div>
+            </div>
+
+            <div class="flex flex-col items-center space-y-2">
+              <button id="addExerciseBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition w-40">Add Exercise</button>
+              <ul id="newRoutineExerciseList" class="list-disc list-inside text-gray-700 w-full text-left"></ul>
+              <button id="createRoutineBtn" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition w-40" disabled>Create</button>
+            </div>
+            <div id="routineCreateStatus" class="text-sm text-green-600 text-center mt-2"></div>
+          </div>
+        </div>
+
+        <div class="mb-6">
+            <label for="routineSelect" class="block text-sm font-semibold text-gray-800 mb-1">Select a Routine</label>
+            <div class="flex items-center">
+              <select id="routineSelect" class="block w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 bg-white text-gray-800 shadow-sm">
+                  <!-- Options will be populated dynamically -->
+              </select>
+            </div>
+            <div class="flex justify-center">
+              <button id="deleteRoutineBtn" class="mt-2 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition hidden">Delete Routine</button>
+            </div>
+            <div id="routineLoadingSpinner" class="flex justify-center mt-2 hidden">
+              <div class="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-blue-500"></div>
+            </div>
+        </div>
+
+        <div id="exerciseContainer" class="mb-6">
+            <!-- Assigned exercises will be displayed here -->
+        </div>
+
+        <div id="addExerciseToExisting" class="mt-4 hidden">
+          <label for="addToRoutineInput" class="block text-sm font-medium text-gray-700 mb-1">Add Exercise to This Routine</label>
+          <div class="relative">
+            <input type="text" id="addToRoutineInput" class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400 focus:outline-none" placeholder="Search and add exercise..." autocomplete="off" />
+            <div id="addToRoutineSuggestions" class="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow mt-1 max-h-48 overflow-y-auto hidden"></div>
+          </div>
+          <div class="flex justify-center mt-2">
+            <button id="addToRoutineBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Add to Routine</button>
+          </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Array to hold new routine exercises temporarily
+        let newRoutineExercises = [];
+
+        // Function to load routines and exercises
+        function loadRoutines() {
+            const routineSelect = document.getElementById('routineSelect');
+            const spinner = document.getElementById('routineLoadingSpinner');
+            routineSelect.disabled = true;
+            spinner.classList.remove('hidden');
+            google.script.run.withSuccessHandler(routines => {
+                renderRoutines(routines);
+                routineSelect.disabled = false;
+                spinner.classList.add('hidden');
+            }).getRoutines();
+        }
+
+        function renderRoutines(routines) {
+            const routineSelect = document.getElementById('routineSelect');
+            routineSelect.innerHTML = '';
+            routines.forEach(routine => {
+                const option = document.createElement('option');
+                option.value = routine.name;
+                option.textContent = routine.name;
+                if (routine.name.startsWith('★')) option.classList.add('text-yellow-500');
+                routineSelect.appendChild(option);
+            });
+            routineSelect.removeEventListener('change', loadExercises);
+            routineSelect.addEventListener('change', loadExercises);
+            const deleteBtn = document.getElementById('deleteRoutineBtn');
+            deleteBtn.classList.toggle('hidden', !routineSelect.value);
+            // Toggle Add Exercise to This Routine section
+            const addToRoutineDiv = document.getElementById('addExerciseToExisting');
+            addToRoutineDiv.classList.toggle('hidden', !routineSelect.value);
+            loadExercises(); // Load exercises for the first routine
+        }
+
+        function loadExercises() {
+            const routineSelect = document.getElementById('routineSelect');
+            const routineName = routineSelect.value;
+            const deleteBtn = document.getElementById('deleteRoutineBtn');
+            const spinner = document.getElementById('routineLoadingSpinner');
+            routineSelect.disabled = true;
+            spinner.classList.remove('hidden');
+            deleteBtn.classList.toggle('hidden', !routineName);
+            // Toggle Add Exercise to This Routine section
+            const addToRoutineDiv = document.getElementById('addExerciseToExisting');
+            addToRoutineDiv.classList.toggle('hidden', !routineSelect.value);
+            if (!routineName) {
+                routineSelect.disabled = false;
+                spinner.classList.add('hidden');
+                return;
+            }
+            google.script.run.withSuccessHandler(exercises => {
+                renderExercises(exercises);
+                routineSelect.disabled = false;
+                spinner.classList.add('hidden');
+            }).getExercisesForRoutine(routineName);
+        }
+
+        function renderExercises(exercises) {
+            const exerciseContainer = document.getElementById('exerciseContainer');
+            exerciseContainer.innerHTML = '';
+            const sortableList = document.createElement('div');
+            sortableList.id = 'sortableExercises';
+            exerciseContainer.appendChild(sortableList);
+            const routineName = document.getElementById('routineSelect').value;
+            exercises.forEach(exercise => {
+                const safeId = exercise.name.replace(/[^a-zA-Z0-9]/g, '_');
+                const exerciseDiv = document.createElement('div');
+                exerciseDiv.className = 'mb-4 p-4 border border-gray-200 rounded-lg';
+                // Inline editable input, update and delete buttons with dropdown suggestion
+                exerciseDiv.innerHTML = `
+                  <div class="flex justify-between items-center space-x-2">
+                    <div class="relative flex-grow">
+                      <input type="text" value="${exercise.name}" id="edit_${safeId}" class="font-semibold w-full p-1 border rounded focus:ring-2 focus:ring-blue-400 focus:outline-none" autocomplete="off" />
+                      <div id="editSuggestions_${safeId}" class="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow mt-1 max-h-48 overflow-y-auto hidden"></div>
+                    </div>
+                    <button class="text-blue-600 text-sm whitespace-nowrap" onclick="updateExercise('${routineName}', '${exercise.name}')">Update</button>
+                    <button class="text-red-600 text-sm whitespace-nowrap" onclick="deleteExercise('${routineName}', '${exercise.name}')">Delete</button>
+                  </div>
+                `;
+                sortableList.appendChild(exerciseDiv);
+
+                // Attach suggestion dropdown logic to the input
+                const editInput = exerciseDiv.querySelector(`#edit_${safeId}`);
+                const suggestionsDiv = exerciseDiv.querySelector(`#editSuggestions_${safeId}`);
+
+                editInput.addEventListener('input', function () {
+                    const inputVal = this.value.toLowerCase();
+                    suggestionsDiv.innerHTML = '';
+
+                    if (inputVal.length === 0) {
+                        suggestionsDiv.classList.add('hidden');
+                        return;
+                    }
+
+                    const filtered = availableExercises.filter(name => name.toLowerCase().includes(inputVal));
+                    if (filtered.length === 0) {
+                        suggestionsDiv.classList.add('hidden');
+                        return;
+                    }
+
+                    filtered.forEach(name => {
+                        const div = document.createElement('div');
+                        div.className = 'px-3 py-2 hover:bg-blue-100 cursor-pointer';
+                        div.textContent = name;
+                        div.addEventListener('click', () => {
+                            editInput.value = name;
+                            suggestionsDiv.classList.add('hidden');
+                        });
+                        suggestionsDiv.appendChild(div);
+                    });
+
+                    suggestionsDiv.classList.remove('hidden');
+                });
+
+                // Hide suggestions when clicking outside this input or suggestions
+                document.addEventListener('click', function (e) {
+                    if (!e.target.closest(`#edit_${safeId}`) && !e.target.closest(`#editSuggestions_${safeId}`)) {
+                        suggestionsDiv.classList.add('hidden');
+                    }
+                });
+            });
+            if (window.Sortable) {
+                Sortable.create(sortableList, {
+                  animation: 150,
+                  onEnd: function (evt) {
+                    const fromIndex = evt.oldIndex;
+                    const toIndex = evt.newIndex;
+                    const routineName = document.getElementById('routineSelect').value;
+                    google.script.run.reorderExerciseInRoutine(routineName, fromIndex, toIndex);
+                  }
+                });
+            }
+        }
+
+        // --- New Routine Creation Logic ---
+
+        // Enable or disable create button based on inputs
+        function updateCreateButtonState() {
+            const routineName = document.getElementById('newRoutineName').value.trim();
+            const createBtn = document.getElementById('createRoutineBtn');
+            if (routineName && newRoutineExercises.length > 0) {
+                createBtn.disabled = false;
+            } else {
+                createBtn.disabled = true;
+            }
+        }
+
+        // Render the list of exercises added to the new routine
+        function renderNewRoutineExerciseList() {
+            const list = document.getElementById('newRoutineExerciseList');
+            list.innerHTML = '';
+            newRoutineExercises.forEach((exercise, index) => {
+                const li = document.createElement('li');
+                li.textContent = exercise;
+                // Optional: add remove button for each exercise
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = '×';
+                removeBtn.className = 'ml-2 text-red-600 font-bold';
+                removeBtn.style.cursor = 'pointer';
+                removeBtn.addEventListener('click', () => {
+                    newRoutineExercises.splice(index, 1);
+                    renderNewRoutineExerciseList();
+                    updateCreateButtonState();
+                });
+                li.appendChild(removeBtn);
+                list.appendChild(li);
+            });
+        }
+
+        document.getElementById('newRoutineName').addEventListener('input', updateCreateButtonState);
+
+        document.getElementById('addExerciseBtn').addEventListener('click', function() {
+            const name = document.getElementById('newExerciseName').value.trim();
+            if (!name) return;
+            if (!newRoutineExercises.includes(name)) {
+                newRoutineExercises.push(name);
+                renderNewRoutineExerciseList();
+                updateCreateButtonState();
+            }
+            document.getElementById('newExerciseName').value = '';
+            document.getElementById('exerciseSuggestions').classList.add('hidden');
+        });
+
+        document.getElementById('createRoutineBtn').addEventListener('click', function() {
+            const routineName = document.getElementById('newRoutineName').value.trim();
+            if (!routineName || newRoutineExercises.length === 0) return;
+            // Disable button to prevent multiple clicks and show spinner
+            this.disabled = true;
+            this.innerHTML = '<span class="animate-spin mr-2 inline-block h-4 w-4 border-t-2 border-white border-solid rounded-full"></span>Creating...';
+            // Disable inputs
+            document.getElementById('newRoutineName').disabled = true;
+            document.getElementById('newExerciseName').disabled = true;
+            document.getElementById('addExerciseBtn').disabled = true;
+            google.script.run.withSuccessHandler(msg => {
+                document.getElementById('routineCreateStatus').textContent = msg || 'Routine created!';
+                // After routine created, add exercises one by one
+                let addCount = 0;
+                function addNextExercise() {
+                    if (addCount >= newRoutineExercises.length) {
+                        // All exercises added
+                        document.getElementById('newRoutineName').value = '';
+                        newRoutineExercises = [];
+                        renderNewRoutineExerciseList();
+                        updateCreateButtonState();
+                        loadRoutines();
+                        const createBtn = document.getElementById('createRoutineBtn');
+                        createBtn.textContent = 'Create';
+                        createBtn.disabled = true;
+                        // Re-enable inputs
+                        document.getElementById('newRoutineName').disabled = false;
+                        document.getElementById('newExerciseName').disabled = false;
+                        document.getElementById('addExerciseBtn').disabled = false;
+                        return;
+                    }
+                    const exercise = { name: newRoutineExercises[addCount] };
+                    google.script.run.withSuccessHandler(() => {
+                        addCount++;
+                        addNextExercise();
+                    }).addExerciseToRoutine(routineName, exercise);
+                }
+                addNextExercise();
+            }).createRoutineSheet(routineName);
+        });
+
+        // --- Exercise Suggestion Search ---
+        let availableExercises = [];
+
+        google.script.run.withSuccessHandler(exercises => {
+            availableExercises = exercises;
+        }).getAvailableExercises();
+
+        document.getElementById('newExerciseName').addEventListener('input', function () {
+            const input = this.value.toLowerCase();
+            const suggestionsDiv = document.getElementById('exerciseSuggestions');
+            suggestionsDiv.innerHTML = '';
+
+            if (input.length === 0) {
+                suggestionsDiv.classList.add('hidden');
+                return;
+            }
+
+            const filtered = availableExercises.filter(name => name.toLowerCase().includes(input));
+            if (filtered.length === 0) {
+                suggestionsDiv.classList.add('hidden');
+                return;
+            }
+
+            filtered.forEach(name => {
+                const div = document.createElement('div');
+                div.className = 'px-3 py-2 hover:bg-blue-100 cursor-pointer';
+                div.textContent = name;
+                div.addEventListener('click', () => {
+                    document.getElementById('newExerciseName').value = name;
+                    suggestionsDiv.classList.add('hidden');
+                });
+                suggestionsDiv.appendChild(div);
+            });
+
+            suggestionsDiv.classList.remove('hidden');
+        });
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function (e) {
+            const target = e.target;
+            if (!target.closest('#newExerciseName') && !target.closest('#exerciseSuggestions')) {
+                document.getElementById('exerciseSuggestions').classList.add('hidden');
+            }
+            if (!target.closest('#addToRoutineInput') && !target.closest('#addToRoutineSuggestions')) {
+                document.getElementById('addToRoutineSuggestions').classList.add('hidden');
+            }
+        });
+
+        // --- Add Exercise To Existing Routine ---
+
+        document.getElementById('addToRoutineBtn').addEventListener('click', function () {
+          const name = document.getElementById('addToRoutineInput').value.trim();
+          const routineName = document.getElementById('routineSelect').value;
+          if (!name || !routineName) return;
+          const exercise = { name: encodeURIComponent(name) };
+          google.script.run.withSuccessHandler(() => {
+            document.getElementById('addToRoutineInput').value = '';
+            loadExercises();
+          }).addExerciseToRoutine(routineName, exercise);
+        });
+
+        document.getElementById('addToRoutineInput').addEventListener('input', function () {
+          const input = this.value.toLowerCase();
+          const suggestionsDiv = document.getElementById('addToRoutineSuggestions');
+          suggestionsDiv.innerHTML = '';
+
+          if (input.length === 0) {
+            suggestionsDiv.classList.add('hidden');
+            return;
+          }
+
+          const filtered = availableExercises.filter(name => name.toLowerCase().includes(input));
+          if (filtered.length === 0) {
+            suggestionsDiv.classList.add('hidden');
+            return;
+          }
+
+          filtered.forEach(name => {
+            const div = document.createElement('div');
+            div.className = 'px-3 py-2 hover:bg-blue-100 cursor-pointer';
+            div.textContent = name;
+            div.addEventListener('click', () => {
+              document.getElementById('addToRoutineInput').value = name;
+              suggestionsDiv.classList.add('hidden');
+            });
+            suggestionsDiv.appendChild(div);
+          });
+
+          suggestionsDiv.classList.remove('hidden');
+        });
+
+        // --- Routine and Exercise Management Functions ---
+        function deleteRoutine(routineName) {
+          if (!confirm(`Are you sure you want to delete the routine "${routineName}"?`)) return;
+          google.script.run.withSuccessHandler(() => loadRoutines()).deleteRoutine(routineName);
+        }
+
+        function deleteExercise(routineName, exerciseName) {
+          google.script.run.withSuccessHandler(() => loadExercises()).deleteExerciseFromRoutine(routineName, exerciseName);
+        }
+
+        function updateExercise(routineName, oldName) {
+          const safeOldId = oldName.replace(/[^a-zA-Z0-9]/g, '_');
+          const newName = document.getElementById(`edit_${safeOldId}`).value.trim();
+          if (!newName || newName === oldName) return;
+          google.script.run.withSuccessHandler(() => loadExercises()).updateExerciseInRoutine(
+            routineName,
+            encodeURIComponent(oldName),
+            encodeURIComponent(newName)
+          );
+        }
+
+        // --- Delete Routine Button Event Listener ---
+        document.getElementById('deleteRoutineBtn').addEventListener('click', function () {
+          const routineName = document.getElementById('routineSelect').value;
+          if (routineName) deleteRoutine(routineName);
+        });
+
+
+        loadRoutines(); // Initial load
+    </script>
+</body>
+</html>

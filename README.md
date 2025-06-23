@@ -1,82 +1,45 @@
-# StreakMate: Google Apps Script Automated Task Journal
+# Habit Tracker Project
 
-![View Count](https://komarev.com/ghpvc/?username=streakmate-task-tracker&color=blue)
+## Overview
+The Habit Tracker project is a web application designed to help users manage their daily tasks, track workout routines, and log meals and calorie intake. The application is built using Google Apps Script and provides a user-friendly interface for tracking habits and fitness goals.
 
-**StreakMate** is a lightweight, customizable task tracker built on top of Google Apps Script and Google Sheets.  
-It helps you **build habits**, **track daily tasks**, and **automate reminders** – all inside your Google Workspace.
-
----
-
-## ✨ Features
-
-- ✅ **Daily Task Dashboard** with checkboxes and progress bars
-- 📅 **Monthly Logging** in dynamically generated Google Sheets
-- 🔁 **Recurring Tasks** with day-of-week scheduling
-- ⏰ **Automated 3-hour Reminders** for pending tasks (via email)
-- 📝 **Inline General Comments** for each day
-- 🧮 **Cumulative Number Tracking** (e.g., rounds, pages read, hours)
-- 📊 **Analytics Dashboard** using Google Charts
-- 🛠️ **Task Manager Interface** to create, edit, delete tasks
-- 🔒 **Resilient to column reordering**, based on header matching
-- 🌱 Supports `yes/no` tasks, numeric goals, tags, notes, and skip option
-
----
-
-## 🚀 Setup Instructions
-
-### 1. 📁 Create a New Google Apps Script Project
-- Go to [script.google.com](https://script.google.com)
-- Click **New Project**
-
-### 2. 📄 Add the Script Files
-- Replace the default `Code.gs` with your full `Code.gs` content
-- Add the following HTML files via **File > New > HTML**:
-  - `index.html` (for Daily Dashboard)
-  - `TaskManager.html` (for managing tasks)
-  - `Analytics.html` (for visualizing progress)
-
-### 3. 🧪 Run Initial Setup
-In the Apps Script Editor:
-- Go to `Run > setup()`
-- Approve all permissions
-- This will:
-  - Create a task sheet for the current month (e.g., `Tasks_June-2025`)
-  - Create a progress log (e.g., `June-2025`)
-  - Set up a comment sheet and email reminder triggers
-
-### 4. 🔗 Deploy the Web App
-- Click **Deploy > Test deployments > Web App**
-- Set:
-  - **Execute as**: Me (your account)
-  - **Who has access**: Only Myself *(or anyone, if shared)*
-- Copy the **Web App URL**
-
-### 5. 🖥 Use the Web Interfaces
-- Visit: `YOUR_WEB_APP_URL?page=index` – Daily Dashboard  
-- Visit: `YOUR_WEB_APP_URL?page=TaskManager` – Manage Tasks  
-- Visit: `YOUR_WEB_APP_URL?page=Analytics` – Progress Chart
-
----
-
-## 📦 Folder Structure
-
+## Project Structure
 ```
-├── Code.gs                 # Main AppScript logic
-├── index.html              # Daily tracking interface
-├── TaskManager.html        # Task CRUD UI
-├── Analytics.html          # Chart-based analytics
-└── Google Sheets           # Acts as backend database (auto-generated)
+Task_tracker
+├── index.html            # Main user interface for the habit tracker app
+├── task_manager.html     # Interface for managing task CRUD operations
+├── Code.gs               # Backend logic for task tracking
+├── workout_tracker.html   # Frontend for the Workout Routine Tracker module
+├── workout_tracker.gs     # Backend logic for the Workout Routine Tracker module
+├── meal_tracker.html      # Frontend for the Meal & Calorie Tracker module
+├── meal_tracker.gs        # Backend logic for the Meal & Calorie Tracker module
+└── README.md              # Project documentation
 ```
 
----
+## Setup Instructions
+1. **Google Apps Script Environment**: Open Google Apps Script and create a new project.
+2. **File Creation**: Create the files as listed in the project structure.
+3. **Copy Code**: Copy the respective code into each file from the provided specifications.
+4. **Deploy**: Deploy the web app to make it accessible to users.
 
-## 🙌 Credits
+## Module Descriptions
 
-Built with ❤️ using Google Apps Script by Ruturaj Tambe 
-Inspired by the idea of creating a habit tracker that runs natively within Google Sheets with no external dependency.
+### Habit Tracker
+- **index.html**: Displays today's tasks and allows users to submit progress.
+- **task_manager.html**: Manages task CRUD operations.
 
----
+### Workout Routine Tracker
+- **workout_tracker.html**: Allows users to log gym workouts, including exercises, sets, reps, and weights.
+- **workout_tracker.gs**: Contains backend functions to manage workout routines and logs.
 
-## 📄 License
+### Meal & Calorie Tracker
+- **meal_tracker.html**: Enables users to log daily meals, track food items, and calculate calorie intake.
+- **meal_tracker.gs**: Manages meal logging and nutritional calculations.
 
-MIT License – feel free to use, modify, and share.
+## Usage Guidelines
+- Navigate to the main interface to view and manage tasks.
+- Use the Workout Routine Tracker to log workouts and view historical performance.
+- Log meals and track nutritional intake using the Meal & Calorie Tracker.
+
+## Contribution
+Feel free to contribute to the project by adding features or improving existing functionalities. Please follow the project's coding standards and guidelines.

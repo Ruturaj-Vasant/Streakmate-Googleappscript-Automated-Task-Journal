@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meal & Calorie Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div class="max-w-3xl mx-auto mt-10 bg-white rounded-xl shadow-lg p-8">
+        <h2 class="text-center text-2xl font-bold text-blue-600 mb-8">Meal & Calorie Tracker</h2>
+        <!-- Add Food Item Button -->
+        <div class="mb-6 flex justify-end">
+            <button id="openAddFoodModal" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition">Add New Food Item</button>
+        </div>
+
+        <div class="mb-4">
+            <label for="date" class="block text-sm font-medium text-gray-700">Select Date:</label>
+            <input type="date" id="date" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400">
+        </div>
+
+        <div class="mb-4">
+            <label for="mealType" class="block text-sm font-medium text-gray-700">Meal Type:</label>
+            <select id="mealType" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400">
+                <option>Breakfast</option>
+                <option>Lunch</option>
+                <option>Dinner</option>
+                <option>Snacks</option>
+            </select>
+        </div>
+
+        <div class="mb-4">
+            <label for="foodItem" class="block text-sm font-medium text-gray-700">Food Item:</label>
+            <input type="text" id="foodItem" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400" placeholder="Search food item...">
+        </div>
+
+        <div class="mb-4">
+            <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity (g):</label>
+            <input type="number" id="quantity" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-400" min="1">
+        </div>
+
+        <button id="addMealBtn" class="mt-6 w-full bg-gradient-to-r from-blue-600 to-blue-400 text-white font-semibold py-3 rounded-lg shadow-md hover:from-blue-700 hover:to-blue-500 transition">
+            Add to Meal Log
+        </button>
+
+        <div id="mealLog" class="mt-8">
+            <h3 class="text-lg font-semibold text-gray-800">Logged Meals</h3>
+            <table class="min-w-full mt-4 border border-gray-300">
+                <thead>
+                    <tr class="bg-gray-100">
+                        <th class="border px-4 py-2">Date</th>
+                        <th class="border px-4 py-2">Meal</th>
+                        <th class="border px-4 py-2">Food Item</th>
+                        <th class="border px-4 py-2">Quantity (g)</th>
+                        <th class="border px-4 py-2">Protein</th>
+                        <th class="border px-4 py-2">Carbs</th>
+                        <th class="border px-4 py-2">Fat</th>
+                        <th class="border px-4 py-2">Calories</th>
+                        <th class="border px-4 py-2">Notes</th>
+                    </tr>
+                </thead>
+                <tbody id="mealLogBody">
+                    <!-- Meal entries will be dynamically inserted here -->
+                </tbody>
+            </table>
+        </div>
+
+        <div id="nutritionSummary" class="mt-6">
+            <h3 class="text-lg font-semibold text-gray-800">Nutrition Summary</h3>
+            <div class="flex justify-between mt-2">
+                <span>Total Protein: <span id="totalProtein">0g</span></span>
+                <span>Total Carbs: <span id="totalCarbs">0g</span></span>
+                <span>Total Fat: <span id="totalFat">0g</span></span>
+                <span>Total Calories: <span id="totalCalories">0 kcal</span></span>
+            </div>
+            <div class="mt-2">
+                <span id="calorieStatus" class="font-medium"></span>
+            </div>
+        </div>
+
+        <!-- Add Food Item Modal -->
+        <div id="addFoodModal" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+                <h3 class="text-lg font-semibold mb-4 text-green-700">Add New Food Item</h3>
+                <div class="mb-2">
+                    <label class="block text-sm font-medium text-gray-700">Food Name</label>
+                    <input type="text" id="modalFoodName" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="e.g. Oats" />
+                </div>
+                <div class="mb-2 flex gap-2">
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-gray-700">Protein (per 100g)</label>
+                        <input type="number" id="modalProtein" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" min="0" />
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-gray-700">Carbs (per 100g)</label>
+                        <input type="number" id="modalCarbs" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" min="0" />
+                    </div>
+                </div>
+                <div class="mb-2 flex gap-2">
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-gray-700">Fat (per 100g)</label>
+                        <input type="number" id="modalFat" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" min="0" />
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-gray-700">Calories (per 100g)</label>
+                        <input type="number" id="modalCalories" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" min="0" />
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 mt-4">
+                    <button id="closeAddFoodModal" class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400">Cancel</button>
+                    <button id="saveFoodItemBtn" class="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700">Save</button>
+                </div>
+                <div id="addFoodStatus" class="text-sm text-green-600 mt-2"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript for handling meal logging and nutrition summary will go here
+
+        // Add Food Modal Logic
+        document.getElementById('openAddFoodModal').addEventListener('click', function() {
+            document.getElementById('addFoodModal').classList.remove('hidden');
+        });
+        document.getElementById('closeAddFoodModal').addEventListener('click', function() {
+            document.getElementById('addFoodModal').classList.add('hidden');
+            document.getElementById('addFoodStatus').textContent = '';
+        });
+        document.getElementById('saveFoodItemBtn').addEventListener('click', function() {
+            const name = document.getElementById('modalFoodName').value.trim();
+            const protein = document.getElementById('modalProtein').value;
+            const carbs = document.getElementById('modalCarbs').value;
+            const fat = document.getElementById('modalFat').value;
+            const calories = document.getElementById('modalCalories').value;
+            if (!name) return;
+            const food = { name, protein, carbs, fat, calories };
+            google.script.run.withSuccessHandler(msg => {
+                document.getElementById('addFoodStatus').textContent = msg || 'Food item added!';
+                document.getElementById('modalFoodName').value = '';
+                document.getElementById('modalProtein').value = '';
+                document.getElementById('modalCarbs').value = '';
+                document.getElementById('modalFat').value = '';
+                document.getElementById('modalCalories').value = '';
+                setTimeout(() => {
+                    document.getElementById('addFoodModal').classList.add('hidden');
+                    document.getElementById('addFoodStatus').textContent = '';
+                }, 1000);
+                // Optionally refresh food list here
+            }).addFoodItem(food);
+        });
+    </script>
+</body>
+</html>
